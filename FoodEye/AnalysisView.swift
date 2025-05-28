@@ -124,6 +124,12 @@ struct AnalysisView: View {
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
                         
+                        Text("本应用中的 AI 营养分析结果仅作为参考性建议，不构成医疗诊断或治疗依据。如您有特殊健康状况或疑问，请务必咨询专业注册营养师，以获取个性化、权威的医疗和营养指导。")
+                            .font(.caption)
+                            .foregroundColor(.yellow)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+
                         Text("点击\"开始分析\"开始")
                             .font(.subheadline)
                             .foregroundColor(.gray)
