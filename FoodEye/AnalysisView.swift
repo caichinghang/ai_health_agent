@@ -219,13 +219,22 @@ struct AnalysisView_Previews: PreviewProvider {
         AnalysisView(
             selectedImage: UIImage(systemName: "photo")!,
             mealInfo: MealInfo(
-                mealType: .dinner,
-                numberOfPeople: 2,
-                additionalNotes: "测试餐食",
-                isVegetarian: false,
+                mealType: .lunch,
+                mealLocation: .home,
+                portionSize: .medium,
+                hasDrinks: false,
+                drinkDetails: "",
+                cookingMethod: .other,
+                otherCookingMethod: "",
+                nutritionFocus: [],
+                otherNutritionFocus: "",
+                healthGoal: .balanced,
+                otherHealthGoal: "",
                 hasAllergies: false,
-                allergyNotes: "",
-                estimatedPortion: .medium
+                allergyDetails: "",
+                dietaryPreference: .none,
+                otherDietaryPreference: "",
+                weeklyFrequency: .rare
             )
         )
     }

@@ -33,7 +33,39 @@ struct ResultsView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
                     
-                    // Header with image and health score
+                    // Health Score (moved above image)
+                    CardView(title: "健康评分") {
+                        HStack {
+                            VStack(spacing: 8) {
+                                Text("\(analysisResult.healthScore)")
+                                    .font(.system(size: 48, weight: .bold))
+                                    .foregroundColor(.white)
+                                Text("分（满分100分）")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                            
+                            Spacer()
+                            
+                            VStack(spacing: 4) {
+                                HStack(spacing: 2) {
+                                    ForEach(0..<5, id: \.self) { index in
+                                        Image(systemName: index < analysisResult.healthScore / 20 ? "star.fill" : "star")
+                                            .foregroundColor(.white)
+                                            .font(.title3)
+                                    }
+                                }
+                                
+                                Text(getHealthScoreDescription(analysisResult.healthScore))
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                    .multilineTextAlignment(.center)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    // Image
                     VStack(spacing: 16) {
                         Image(uiImage: selectedImage)
                             .resizable()
@@ -46,30 +78,6 @@ struct ResultsView: View {
                                     .stroke(.white.opacity(0.2), lineWidth: 1)
                             )
                             .padding(.horizontal, 20)
-                        
-                        // Health Score
-                        VStack(spacing: 8) {
-                            Text("健康评分")
-                                .font(.headline)
-                                .foregroundColor(.gray)
-                            
-                            ZStack {
-                                Circle()
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 8)
-                                    .frame(width: 80, height: 80)
-                                
-                                Circle()
-                                    .trim(from: 0, to: Double(analysisResult.healthScore) / 100.0)
-                                    .stroke(.white, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                                    .frame(width: 80, height: 80)
-                                    .rotationEffect(.degrees(-90))
-                                
-                                Text("\(analysisResult.healthScore)")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.white)
-                            }
-                        }
                     }
                     
                     // Tab Selector
@@ -108,6 +116,16 @@ struct ResultsView: View {
             }
         }
     }
+    
+    private func getHealthScoreDescription(_ score: Int) -> String {
+        switch score {
+        case 90...100: return "优秀"
+        case 80..<90: return "良好"
+        case 70..<80: return "中等"
+        case 60..<70: return "一般"
+        default: return "需改善"
+        }
+    }
 }
 
 struct OverviewTab: View {
@@ -119,10 +137,14 @@ struct OverviewTab: View {
             CardView(title: "餐食信息") {
                 VStack(spacing: 12) {
                     InfoRow(label: "餐食类型", value: result.mealInfo.mealType.rawValue)
-                    InfoRow(label: "用餐人数", value: "\(result.mealInfo.numberOfPeople)人")
-                    InfoRow(label: "份量大小", value: result.mealInfo.estimatedPortion.rawValue)
-                    if result.mealInfo.isVegetarian {
-                        InfoRow(label: "饮食类型", value: "素食/纯素食")
+                    InfoRow(label: "用餐地点", value: result.mealInfo.mealLocation.rawValue)
+                    InfoRow(label: "份量大小", value: result.mealInfo.portionSize.rawValue)
+                    if result.mealInfo.dietaryPreference != .none {
+                        InfoRow(label: "饮食偏好", value: result.mealInfo.dietaryPreference.rawValue)
+                    }
+                    if !result.mealInfo.nutritionFocus.isEmpty {
+                        let focusText = result.mealInfo.nutritionFocus.map { $0.rawValue }.joined(separator: "、")
+                        InfoRow(label: "营养关注点", value: focusText)
                     }
                 }
             }
@@ -176,22 +198,7 @@ struct NutritionTab: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            // Detailed Nutrition Table
-            CardView(title: "详细营养成分表") {
-                VStack(spacing: 0) {
-                    NutritionRow(label: "卡路里", value: "\(result.nutrition.calories) 千卡", isHeader: true)
-                    Divider().background(.gray)
-                    NutritionRow(label: "蛋白质", value: "\(result.nutrition.protein) 克")
-                    Divider().background(.gray)
-                    NutritionRow(label: "碳水化合物", value: "\(result.nutrition.carbs) 克")
-                    Divider().background(.gray)
-                    NutritionRow(label: "脂肪", value: "\(result.nutrition.fat) 克")
-                    Divider().background(.gray)
-                    NutritionRow(label: "纤维", value: "\(result.nutrition.fiber) 克")
-                }
-            }
-            
-            // Nutrition Breakdown Chart
+            // Nutrition Breakdown Chart (moved to top)
             CardView(title: "宏量营养素分解") {
                 let total = result.nutrition.protein + result.nutrition.carbs + result.nutrition.fat
                 if total > 0 {
@@ -221,25 +228,201 @@ struct NutritionTab: View {
                         .foregroundColor(.gray)
                 }
             }
+            .padding(.horizontal, 20)
             
-            // Per Person Breakdown
-            if result.mealInfo.numberOfPeople > 1 {
-                CardView(title: "人均营养（共\(result.mealInfo.numberOfPeople)人）") {
-                    VStack(spacing: 0) {
-                        NutritionRow(label: "卡路里", value: "\(result.nutrition.calories / result.mealInfo.numberOfPeople) 千卡", isHeader: true)
+            // Basic Nutrition Table (moved below chart)
+            CardView(title: "基础营养成分") {
+                VStack(spacing: 0) {
+                    NutritionRow(label: "卡路里", value: "\(result.nutrition.calories) 千卡", isHeader: true)
+                    Divider().background(.gray)
+                    NutritionRow(label: "蛋白质", value: "\(result.nutrition.protein) 克")
+                    Divider().background(.gray)
+                    NutritionRow(label: "碳水化合物", value: "\(result.nutrition.carbs) 克")
+                    Divider().background(.gray)
+                    NutritionRow(label: "脂肪", value: "\(result.nutrition.fat) 克")
+                    Divider().background(.gray)
+                    NutritionRow(label: "膳食纤维", value: "\(result.nutrition.fiber) 克")
+                }
+            }
+            .padding(.horizontal, 20)
+            
+            // Focus-specific nutrition information
+            ForEach(result.mealInfo.nutritionFocus, id: \.self) { focus in
+                focusSpecificNutrition(for: focus)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func focusSpecificNutrition(for focus: MealInfoView.NutritionFocus) -> some View {
+        switch focus {
+        case .antioxidant:
+            CardView(title: "抗氧化指标") {
+                VStack(spacing: 0) {
+                    if let antioxidants = result.detailedNutrition?.antioxidants {
+                        NutritionRow(label: "ORAC值", value: "\(antioxidants.oracValue) 单位", isHeader: true)
                         Divider().background(.gray)
-                        NutritionRow(label: "蛋白质", value: "\(result.nutrition.protein / result.mealInfo.numberOfPeople) 克")
+                        NutritionRow(label: "花青素", value: String(format: "%.1f 毫克", antioxidants.anthocyanins))
                         Divider().background(.gray)
-                        NutritionRow(label: "碳水化合物", value: "\(result.nutrition.carbs / result.mealInfo.numberOfPeople) 克")
+                        NutritionRow(label: "类黄酮", value: String(format: "%.1f 毫克", antioxidants.flavonoids))
                         Divider().background(.gray)
-                        NutritionRow(label: "脂肪", value: "\(result.nutrition.fat / result.mealInfo.numberOfPeople) 克")
+                        NutritionRow(label: "β-胡萝卜素", value: String(format: "%.1f 毫克", antioxidants.betaCarotene))
                         Divider().background(.gray)
-                        NutritionRow(label: "纤维", value: "\(result.nutrition.fiber / result.mealInfo.numberOfPeople) 克")
+                        NutritionRow(label: "维生素E", value: String(format: "%.1f 毫克", antioxidants.vitaminE))
+                    } else {
+                        Text("抗氧化数据分析中...")
+                            .foregroundColor(.gray)
+                            .padding()
                     }
                 }
             }
+            .padding(.horizontal, 20)
+            
+        case .sugarControl:
+            CardView(title: "血糖控制指标") {
+                VStack(spacing: 0) {
+                    if let glycemic = result.detailedNutrition?.glycemicInfo {
+                        let giDescription = glycemic.estimatedGI < 55 ? "低" : glycemic.estimatedGI < 70 ? "中等" : "高"
+                        NutritionRow(label: "估算GI值", value: "\(glycemic.estimatedGI) (\(giDescription))", isHeader: true)
+                        Divider().background(.gray)
+                        NutritionRow(label: "总糖分", value: String(format: "%.1f 克", glycemic.totalSugars))
+                        Divider().background(.gray)
+                        NutritionRow(label: "添加糖", value: String(format: "%.1f 克", glycemic.addedSugars))
+                        Divider().background(.gray)
+                        NutritionRow(label: "膳食纤维", value: "\(result.nutrition.fiber) 克")
+                        Divider().background(.gray)
+                        NutritionRow(label: "净碳水", value: String(format: "%.1f 克", glycemic.netCarbs))
+                    } else {
+                        Text("血糖指标分析中...")
+                            .foregroundColor(.gray)
+                            .padding()
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            
+        case .lipidControl:
+            CardView(title: "血脂管理指标") {
+                VStack(spacing: 0) {
+                    if let fattyAcids = result.detailedNutrition?.fattyAcids {
+                        NutritionRow(label: "总脂肪", value: "\(result.nutrition.fat) 克", isHeader: true)
+                        Divider().background(.gray)
+                        NutritionRow(label: "饱和脂肪", value: String(format: "%.1f 克", fattyAcids.saturated))
+                        Divider().background(.gray)
+                        NutritionRow(label: "单不饱和脂肪", value: String(format: "%.1f 克", fattyAcids.monounsaturated))
+                        Divider().background(.gray)
+                        NutritionRow(label: "多不饱和脂肪", value: String(format: "%.1f 克", fattyAcids.polyunsaturated))
+                        Divider().background(.gray)
+                        NutritionRow(label: "Omega-3", value: String(format: "%.1f 克", fattyAcids.omega3))
+                        Divider().background(.gray)
+                        NutritionRow(label: "胆固醇", value: String(format: "%.0f 毫克", fattyAcids.cholesterol))
+                    } else {
+                        Text("脂肪酸分析中...")
+                            .foregroundColor(.gray)
+                            .padding()
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            
+        case .proteinBoost:
+            CardView(title: "蛋白质与氨基酸") {
+                VStack(spacing: 0) {
+                    if let aminoAcids = result.detailedNutrition?.aminoAcids {
+                        NutritionRow(label: "总蛋白质", value: "\(result.nutrition.protein) 克", isHeader: true)
+                        Divider().background(.gray)
+                        NutritionRow(label: "必需氨基酸比例", value: "\(aminoAcids.essentialRatio)%")
+                        Divider().background(.gray)
+                        NutritionRow(label: "BCAA总量", value: String(format: "%.1f 克", aminoAcids.bcaaTotal))
+                        Divider().background(.gray)
+                        NutritionRow(label: "亮氨酸", value: String(format: "%.1f 克", aminoAcids.leucine))
+                        Divider().background(.gray)
+                        NutritionRow(label: "异亮氨酸", value: String(format: "%.1f 克", aminoAcids.isoleucine))
+                        Divider().background(.gray)
+                        NutritionRow(label: "缬氨酸", value: String(format: "%.1f 克", aminoAcids.valine))
+                    } else {
+                        Text("氨基酸分析中...")
+                            .foregroundColor(.gray)
+                            .padding()
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            
+        case .micronutrients:
+            CardView(title: "微量元素") {
+                VStack(spacing: 0) {
+                    if let micronutrients = result.detailedNutrition?.micronutrients {
+                        NutritionRow(label: "锌", value: String(format: "%.1f 毫克", micronutrients.zinc), isHeader: true)
+                        Divider().background(.gray)
+                        NutritionRow(label: "镁", value: String(format: "%.0f 毫克", micronutrients.magnesium))
+                        Divider().background(.gray)
+                        NutritionRow(label: "钾", value: String(format: "%.0f 毫克", micronutrients.potassium))
+                        Divider().background(.gray)
+                        NutritionRow(label: "维生素B12", value: String(format: "%.1f 微克", micronutrients.vitaminB12))
+                        Divider().background(.gray)
+                        NutritionRow(label: "叶酸", value: String(format: "%.0f 微克", micronutrients.folate))
+                    } else {
+                        Text("微量元素分析中...")
+                            .foregroundColor(.gray)
+                            .padding()
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            
+        case .fiber:
+            CardView(title: "膳食纤维详情") {
+                VStack(spacing: 0) {
+                    if let fiberDetails = result.detailedNutrition?.fiberDetails {
+                        NutritionRow(label: "总膳食纤维", value: "\(result.nutrition.fiber) 克", isHeader: true)
+                        Divider().background(.gray)
+                        NutritionRow(label: "可溶性纤维", value: String(format: "%.1f 克", fiberDetails.solubleFiber))
+                        Divider().background(.gray)
+                        NutritionRow(label: "不溶性纤维", value: String(format: "%.1f 克", fiberDetails.insolubleFiber))
+                        Divider().background(.gray)
+                        NutritionRow(label: "益生元", value: String(format: "%.1f 克", fiberDetails.prebiotics))
+                    } else {
+                        Text("膳食纤维分析中...")
+                            .foregroundColor(.gray)
+                            .padding()
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            
+        case .energyControl:
+            CardView(title: "能量管理") {
+                VStack(spacing: 0) {
+                    if let energyBreakdown = result.detailedNutrition?.energyBreakdown {
+                        NutritionRow(label: "总卡路里", value: "\(result.nutrition.calories) 千卡", isHeader: true)
+                        Divider().background(.gray)
+                        NutritionRow(label: "蛋白质卡路里", value: "\(energyBreakdown.proteinCalories) 千卡")
+                        Divider().background(.gray)
+                        NutritionRow(label: "碳水卡路里", value: "\(energyBreakdown.carbCalories) 千卡")
+                        Divider().background(.gray)
+                        NutritionRow(label: "脂肪卡路里", value: "\(energyBreakdown.fatCalories) 千卡")
+                        Divider().background(.gray)
+                        NutritionRow(label: "热密度", value: String(format: "%.1f 千卡/克", energyBreakdown.caloriesPerGram))
+                    } else {
+                        // Fallback calculation
+                        NutritionRow(label: "总卡路里", value: "\(result.nutrition.calories) 千卡", isHeader: true)
+                        Divider().background(.gray)
+                        NutritionRow(label: "蛋白质卡路里", value: "\(result.nutrition.protein * 4) 千卡")
+                        Divider().background(.gray)
+                        NutritionRow(label: "碳水卡路里", value: "\(result.nutrition.carbs * 4) 千卡")
+                        Divider().background(.gray)
+                        NutritionRow(label: "脂肪卡路里", value: "\(result.nutrition.fat * 9) 千卡")
+                        Divider().background(.gray)
+                        NutritionRow(label: "热密度", value: String(format: "%.1f 千卡/克", Double(result.nutrition.calories) / 100.0))
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            
+        case .other:
+            EmptyView()
         }
-        .padding(.horizontal, 20)
     }
 }
 
@@ -422,6 +605,15 @@ struct ResultsView_Previews: PreviewProvider {
                 ingredients: ["鸡肉", "米饭", "蔬菜", "调料"],
                 dishes: ["炒饭"],
                 nutrition: NutritionInfo(calories: 650, protein: 35, carbs: 55, fat: 18, fiber: 4),
+                detailedNutrition: DetailedNutrition(
+                    fattyAcids: FattyAcids(saturated: 4.2, monounsaturated: 8.1, polyunsaturated: 3.8, omega3: 0.8, omega6: 2.1, cholesterol: 45),
+                    aminoAcids: AminoAcids(essentialRatio: 85, bcaaTotal: 6.2, leucine: 2.8, isoleucine: 1.7, valine: 1.7),
+                    antioxidants: Antioxidants(oracValue: 15000, betaCarotene: 3.2, anthocyanins: 125, flavonoids: 85, vitaminE: 8.5),
+                    glycemicInfo: GlycemicInfo(estimatedGI: 55, totalSugars: 18, addedSugars: 3, netCarbs: 51),
+                    micronutrients: Micronutrients(zinc: 2.8, magnesium: 65, potassium: 420, vitaminB12: 1.8, folate: 75),
+                    fiberDetails: FiberDetails(solubleFiber: 2.1, insolubleFiber: 1.9, prebiotics: 0.8),
+                    energyBreakdown: EnergyBreakdown(proteinCalories: 140, carbCalories: 220, fatCalories: 162, caloriesPerGram: 2.6)
+                ),
                 healthScore: 75,
                 analysis: "这是一份营养均衡的餐食，蛋白质含量良好。鸡肉提供优质蛋白质，米饭提供能量来源的碳水化合物。蔬菜添加了必需的维生素和矿物质。",
                 recommendations: [
@@ -434,13 +626,22 @@ struct ResultsView_Previews: PreviewProvider {
                     "蒸蔬菜代替炒蔬菜"
                 ],
                 mealInfo: MealInfo(
-                    mealType: .dinner,
-                    numberOfPeople: 2,
-                    additionalNotes: "",
-                    isVegetarian: false,
+                    mealType: .lunch,
+                    mealLocation: .home,
+                    portionSize: .medium,
+                    hasDrinks: false,
+                    drinkDetails: "",
+                    cookingMethod: .stirFry,
+                    otherCookingMethod: "",
+                    nutritionFocus: [.energyControl],
+                    otherNutritionFocus: "",
+                    healthGoal: .balanced,
+                    otherHealthGoal: "",
                     hasAllergies: false,
-                    allergyNotes: "",
-                    estimatedPortion: .medium
+                    allergyDetails: "",
+                    dietaryPreference: .none,
+                    otherDietaryPreference: "",
+                    weeklyFrequency: .regular
                 )
             ),
             selectedImage: UIImage(systemName: "photo")!
