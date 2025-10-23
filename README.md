@@ -63,7 +63,7 @@
       static let geminiAPIKey = "YOUR_API_KEY_HERE"
       ```
    3. Replace `YOUR_API_KEY_HERE` with your actual Gemini API key:
-```swift
+      ```swift
       static let geminiAPIKey = "AIzaSy...your-actual-key-here"
       ```
    4. Save the file (⌘ + S)
