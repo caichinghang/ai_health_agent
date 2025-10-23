@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MealInfoView: View {
-    let selectedImage: UIImage
+    let selectedImages: [UIImage]
     
     // 1. 用餐基本信息
     @State private var mealType: MealType = .lunch
@@ -38,34 +38,37 @@ struct MealInfoView: View {
     // 6. 饮食频率
     @State private var weeklyFrequency: WeeklyFrequency = .rare
     
+    private let hapticGenerator = UIImpactFeedbackGenerator(style: .medium)
+    private let consistentAnimation: Animation = .spring(response: 0.3, dampingFraction: 0.6)
+    
     enum MealType: String, CaseIterable {
-        case breakfast = "早餐"
-        case lunch = "午餐"
-        case dinner = "晚餐"
-        case snack = "零食"
+        case breakfast = "Breakfast"
+        case lunch = "Lunch"
+        case dinner = "Dinner"
+        case snack = "Snack"
     }
     
     enum MealLocation: String, CaseIterable {
-        case home = "家里"
-        case restaurant = "餐厅"
-        case delivery = "外卖"
-        case office = "公司/学校"
+        case home = "Home"
+        case restaurant = "Restaurant"
+        case delivery = "Delivery"
+        case office = "Office/School"
     }
     
     enum PortionSize: String, CaseIterable {
-        case small = "少（半份）"
-        case medium = "中（1人份）"
-        case large = "多（1.5-2份）"
+        case small = "Small (Half serving)"
+        case medium = "Medium (1 serving)"
+        case large = "Large (1.5-2 servings)"
     }
     
     enum CookingMethod: String, CaseIterable {
-        case stirFry = "炒"
-        case steam = "蒸"
-        case boil = "煮"
-        case bake = "烤"
-        case fry = "炸"
-        case raw = "生食"
-        case other = "其他"
+        case stirFry = "Stir-Fried"
+        case steam = "Steamed"
+        case boil = "Boiled"
+        case bake = "Baked"
+        case fry = "Fried"
+        case raw = "Raw"
+        case other = "Other"
     }
     
     enum NutritionFocus: String, CaseIterable {
@@ -111,45 +114,56 @@ struct MealInfoView: View {
                 VStack(spacing: 32) {
                     // Header
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("营养分析详情")
+                        Text("Meal Details")
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
-                        Text("提供专业营养分析信息")
+                        Text("Help us understand your meal better")
                             .font(.title3)
                             .foregroundColor(.gray)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 24)
-                    .padding(.top, 20)
+                    .padding(.top, 60)
                     
                     // Image preview
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("分析图片")
+                        Text("Analysis Image")
                             .font(.title2)
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
                             .padding(.horizontal, 24)
                         
-                        Image(uiImage: selectedImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(height: 220)
-                            .clipped()
-                            .cornerRadius(16)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(.white.opacity(0.2), lineWidth: 1)
-                            )
-                            .padding(.horizontal, 24)
+                        if let firstImage = selectedImages.first {
+                            Image(uiImage: firstImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(height: 220)
+                                .clipped()
+                                .cornerRadius(16)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(.white.opacity(0.2), lineWidth: 1)
+                                )
+                                .padding(.horizontal, 24)
+                        } else {
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.gray.opacity(0.1))
+                                .frame(height: 220)
+                                .overlay(
+                                    Text("No Image Selected")
+                                        .foregroundColor(.gray)
+                                )
+                                .padding(.horizontal, 24)
+                        }
                     }
                     
                     // 1. 用餐基本信息
-                    modernSectionView(title: "1. 用餐基本信息") {
+                    modernSectionView(title: "1. Basic Meal Information") {
                         VStack(spacing: 24) {
                             // 餐次类型
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("本次属于")
+                                Text("Meal Type")
                                     .font(.title3)
                                     .fontWeight(.medium)
                                     .foregroundColor(.white)
@@ -159,7 +173,12 @@ struct MealInfoView: View {
                                         modernOptionButton(
                                             text: type.rawValue,
                                             isSelected: mealType == type,
-                                            action: { mealType = type }
+                                            action: {
+                                                withAnimation(consistentAnimation) {
+                                                    mealType = type
+                                                }
+                                                hapticGenerator.impactOccurred()
+                                            }
                                         )
                                     }
                                 }
@@ -167,7 +186,7 @@ struct MealInfoView: View {
                             
                             // 用餐地点
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("用餐地点")
+                                Text("Meal Location")
                                     .font(.title3)
                                     .fontWeight(.medium)
                                     .foregroundColor(.white)
@@ -177,7 +196,12 @@ struct MealInfoView: View {
                                         modernOptionButton(
                                             text: location.rawValue,
                                             isSelected: mealLocation == location,
-                                            action: { mealLocation = location }
+                                            action: {
+                                                withAnimation(consistentAnimation) {
+                                                    mealLocation = location
+                                                }
+                                                hapticGenerator.impactOccurred()
+                                            }
                                         )
                                     }
                                 }
@@ -186,11 +210,11 @@ struct MealInfoView: View {
                     }
                     
                     // 2. 份量与组成
-                    modernSectionView(title: "2. 份量与组成") {
+                    modernSectionView(title: "2. Portion and Composition") {
                         VStack(spacing: 24) {
                             // 份量
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("份量")
+                                Text("Portion Size")
                                     .font(.title3)
                                     .fontWeight(.medium)
                                     .foregroundColor(.white)
@@ -200,7 +224,12 @@ struct MealInfoView: View {
                                         modernOptionButton(
                                             text: size.rawValue,
                                             isSelected: portionSize == size,
-                                            action: { portionSize = size }
+                                            action: {
+                                                withAnimation(consistentAnimation) {
+                                                    portionSize = size
+                                                }
+                                                hapticGenerator.impactOccurred()
+                                            }
                                         )
                                     }
                                 }
@@ -208,29 +237,39 @@ struct MealInfoView: View {
                             
                             // 是否包含饮品
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("是否包含饮品")
+                                Text("Includes Beverages")
                                     .font(.title3)
                                     .fontWeight(.medium)
                                     .foregroundColor(.white)
                                 
                                 HStack(spacing: 16) {
                                     modernToggleButton(
-                                        text: "是",
+                                        text: "Yes",
                                         isSelected: hasDrinks,
-                                        action: { hasDrinks = true }
+                                        action: {
+                                            withAnimation(consistentAnimation) {
+                                                hasDrinks = true
+                                            }
+                                            hapticGenerator.impactOccurred()
+                                        }
                                     )
                                     
                                     modernToggleButton(
-                                        text: "否",
+                                        text: "No",
                                         isSelected: !hasDrinks,
-                                        action: { hasDrinks = false }
+                                        action: {
+                                            withAnimation(consistentAnimation) {
+                                                hasDrinks = false
+                                            }
+                                            hapticGenerator.impactOccurred()
+                                        }
                                     )
                                     
                                     Spacer()
                                 }
                                 
                                 if hasDrinks {
-                                    modernTextField(placeholder: "请注明饮品类型", text: $drinkDetails)
+                                    modernTextField(placeholder: "Specify beverage type", text: $drinkDetails)
                                         .padding(.top, 8)
                                 }
                             }
@@ -238,9 +277,9 @@ struct MealInfoView: View {
                     }
                     
                     // 3. 烹饪方式
-                    modernSectionView(title: "3. 烹饪方式") {
+                    modernSectionView(title: "3. Cooking Method") {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("主要方式")
+                            Text("Primary Method")
                                 .font(.title3)
                                 .fontWeight(.medium)
                                 .foregroundColor(.white)
@@ -250,161 +289,32 @@ struct MealInfoView: View {
                                     modernOptionButton(
                                         text: method.rawValue,
                                         isSelected: cookingMethod == method,
-                                        action: { cookingMethod = method }
+                                        action: {
+                                            withAnimation(consistentAnimation) {
+                                                cookingMethod = method
+                                            }
+                                            hapticGenerator.impactOccurred()
+                                        }
                                     )
                                 }
                             }
                             
                             if cookingMethod == .other {
-                                modernTextField(placeholder: "请说明其他烹饪方式", text: $otherCookingMethod)
+                                modernTextField(placeholder: "Specify other cooking method", text: $otherCookingMethod)
                                     .padding(.top, 16)
-                            }
-                        }
-                    }
-                    
-                    // 4. 营养关注点
-                    modernSectionView(title: "4. 营养关注点（必选，可多选）") {
-                        VStack(alignment: .leading, spacing: 16) {
-                            if nutritionFocus.isEmpty {
-                                Text("请至少选择一个营养关注点")
-                                    .font(.callout)
-                                    .foregroundColor(.orange)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(Color.orange.opacity(0.1))
-                                    .cornerRadius(8)
-                            }
-                            
-                            ForEach(NutritionFocus.allCases, id: \.self) { focus in
-                                modernMultiSelectButton(
-                                    text: focus.rawValue,
-                                    isSelected: nutritionFocus.contains(focus),
-                                    action: {
-                                        if nutritionFocus.contains(focus) {
-                                            nutritionFocus.remove(focus)
-                                        } else {
-                                            nutritionFocus.insert(focus)
-                                        }
-                                    }
-                                )
-                            }
-                            
-                            if nutritionFocus.contains(.other) {
-                                modernTextField(placeholder: "请说明其他营养关注点", text: $otherNutritionFocus)
-                                    .padding(.top, 8)
-                            }
-                        }
-                    }
-                    
-                    // 5. 健康目标与限制
-                    modernSectionView(title: "5. 健康目标与限制") {
-                        VStack(spacing: 24) {
-                            // 健康目标
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("健康目标")
-                                    .font(.title3)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.white)
-                                
-                                VStack(spacing: 12) {
-                                    ForEach(HealthGoal.allCases, id: \.self) { goal in
-                                        modernOptionButton(
-                                            text: goal.rawValue,
-                                            isSelected: healthGoal == goal,
-                                            action: { healthGoal = goal }
-                                        )
-                                    }
-                                }
-                                
-                                if healthGoal == .other {
-                                    modernTextField(placeholder: "请说明其他健康目标", text: $otherHealthGoal)
-                                        .padding(.top, 8)
-                                }
-                            }
-                            
-                            // 食物过敏/禁忌
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("食物过敏/禁忌")
-                                    .font(.title3)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.white)
-                                
-                                HStack(spacing: 16) {
-                                    modernToggleButton(
-                                        text: "无",
-                                        isSelected: !hasAllergies,
-                                        action: { hasAllergies = false }
-                                    )
-                                    
-                                    modernToggleButton(
-                                        text: "有",
-                                        isSelected: hasAllergies,
-                                        action: { hasAllergies = true }
-                                    )
-                                    
-                                    Spacer()
-                                }
-                                
-                                if hasAllergies {
-                                    modernTextField(placeholder: "请详细说明过敏食物", text: $allergyDetails)
-                                        .padding(.top, 8)
-                                }
-                            }
-                            
-                            // 特殊饮食偏好
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("特殊饮食偏好")
-                                    .font(.title3)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.white)
-                                
-                                VStack(spacing: 12) {
-                                    ForEach(DietaryPreference.allCases, id: \.self) { preference in
-                                        modernOptionButton(
-                                            text: preference.rawValue,
-                                            isSelected: dietaryPreference == preference,
-                                            action: { dietaryPreference = preference }
-                                        )
-                                    }
-                                }
-                                
-                                if dietaryPreference == .other {
-                                    modernTextField(placeholder: "请说明其他饮食偏好", text: $otherDietaryPreference)
-                                        .padding(.top, 8)
-                                }
-                            }
-                        }
-                    }
-                    
-                    // 6. 饮食频率
-                    modernSectionView(title: "6. 饮食频率") {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("本周类似饮食频率")
-                                .font(.title3)
-                                .fontWeight(.medium)
-                                .foregroundColor(.white)
-                            
-                            VStack(spacing: 12) {
-                                ForEach(WeeklyFrequency.allCases, id: \.self) { frequency in
-                                    modernOptionButton(
-                                        text: frequency.rawValue,
-                                        isSelected: weeklyFrequency == frequency,
-                                        action: { weeklyFrequency = frequency }
-                                    )
-                                }
                             }
                         }
                     }
                     
                     // Analyze Button
                     NavigationLink(destination: AnalysisView(
-                        selectedImage: selectedImage,
+                        selectedImages: selectedImages,
                         mealInfo: createMealInfo()
                     )) {
                         HStack(spacing: 12) {
                             Image(systemName: "brain.head.profile")
                                 .font(.title2)
-                            Text("开始专业营养分析")
+                            Text("Start Analysis")
                                 .font(.title3)
                                 .fontWeight(.semibold)
                         }
@@ -416,14 +326,16 @@ struct MealInfoView: View {
                                 .fill(.white)
                         )
                     }
-                    .disabled(nutritionFocus.isEmpty)
-                    .opacity(nutritionFocus.isEmpty ? 0.6 : 1.0)
                     .padding(.horizontal, 24)
                     .padding(.top, 32)
+                    
+                    // Sections 4-6 removed - using health profile instead
                 }
                 .padding(.bottom, 40)
             }
         }
+        .navigationBarHidden(true)
+        .navigationBarBackButtonHidden(true)
         .preferredColorScheme(.dark)
     }
     
@@ -466,6 +378,9 @@ struct MealInfoView: View {
                     .fontWeight(.medium)
                     .foregroundColor(.white)
                     .multilineTextAlignment(.leading)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                    .truncationMode(.tail)
                 
                 Spacer()
             }
@@ -493,6 +408,9 @@ struct MealInfoView: View {
                     .font(.body)
                     .fontWeight(.medium)
                     .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                    .truncationMode(.tail)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
@@ -519,6 +437,9 @@ struct MealInfoView: View {
                     .fontWeight(.medium)
                     .foregroundColor(.white)
                     .multilineTextAlignment(.leading)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                    .truncationMode(.tail)
                 
                 Spacer()
             }
@@ -640,6 +561,6 @@ extension View {
 
 struct MealInfoView_Previews: PreviewProvider {
     static var previews: some View {
-        MealInfoView(selectedImage: UIImage(systemName: "photo")!)
+        MealInfoView(selectedImages: [UIImage(systemName: "photo")!])
     }
 } 

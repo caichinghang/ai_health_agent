@@ -9,9 +9,18 @@ import SwiftUI
 
 @main
 struct FoodEyeApp: App {
+    @StateObject private var storage = HealthProfileStorage.shared
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            NavigationView {
+                if storage.hasProfile() {
+                    HomeView()
+                } else {
+                    HealthProfileInputView()
+                }
+            }
+            .navigationViewStyle(StackNavigationViewStyle())
         }
     }
 }

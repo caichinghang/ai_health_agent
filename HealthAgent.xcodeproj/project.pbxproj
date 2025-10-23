@@ -24,9 +24,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		D48531582DE6B8E8004F982D /* FoodEye.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FoodEye.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		D48531652DE6B8E9004F982D /* FoodEyeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FoodEyeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		D485316F2DE6B8E9004F982D /* FoodEyeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FoodEyeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D48531582DE6B8E8004F982D /* HealthAgent.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HealthAgent.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D48531652DE6B8E9004F982D /* HealthAgentTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HealthAgentTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D485316F2DE6B8E9004F982D /* HealthAgentUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HealthAgentUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -85,9 +85,9 @@
 		D48531592DE6B8E8004F982D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D48531582DE6B8E8004F982D /* FoodEye.app */,
-				D48531652DE6B8E9004F982D /* FoodEyeTests.xctest */,
-				D485316F2DE6B8E9004F982D /* FoodEyeUITests.xctest */,
+				D48531582DE6B8E8004F982D /* HealthAgent.app */,
+				D48531652DE6B8E9004F982D /* HealthAgentTests.xctest */,
+				D485316F2DE6B8E9004F982D /* HealthAgentUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D48531572DE6B8E8004F982D /* FoodEye */ = {
+		D48531572DE6B8E8004F982D /* HealthAgent */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D48531792DE6B8E9004F982D /* Build configuration list for PBXNativeTarget "FoodEye" */;
+			buildConfigurationList = D48531792DE6B8E9004F982D /* Build configuration list for PBXNativeTarget "HealthAgent" */;
 			buildPhases = (
 				D48531542DE6B8E8004F982D /* Sources */,
 				D48531552DE6B8E8004F982D /* Frameworks */,
@@ -110,16 +110,16 @@
 			fileSystemSynchronizedGroups = (
 				D485315A2DE6B8E8004F982D /* FoodEye */,
 			);
-			name = FoodEye;
+			name = HealthAgent;
 			packageProductDependencies = (
 			);
 			productName = FoodEye;
-			productReference = D48531582DE6B8E8004F982D /* FoodEye.app */;
+			productReference = D48531582DE6B8E8004F982D /* HealthAgent.app */;
 			productType = "com.apple.product-type.application";
 		};
-		D48531642DE6B8E9004F982D /* FoodEyeTests */ = {
+		D48531642DE6B8E9004F982D /* HealthAgentTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D485317C2DE6B8E9004F982D /* Build configuration list for PBXNativeTarget "FoodEyeTests" */;
+			buildConfigurationList = D485317C2DE6B8E9004F982D /* Build configuration list for PBXNativeTarget "HealthAgentTests" */;
 			buildPhases = (
 				D48531612DE6B8E9004F982D /* Sources */,
 				D48531622DE6B8E9004F982D /* Frameworks */,
@@ -133,16 +133,16 @@
 			fileSystemSynchronizedGroups = (
 				D48531682DE6B8E9004F982D /* FoodEyeTests */,
 			);
-			name = FoodEyeTests;
+			name = HealthAgentTests;
 			packageProductDependencies = (
 			);
 			productName = FoodEyeTests;
-			productReference = D48531652DE6B8E9004F982D /* FoodEyeTests.xctest */;
+			productReference = D48531652DE6B8E9004F982D /* HealthAgentTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		D485316E2DE6B8E9004F982D /* FoodEyeUITests */ = {
+		D485316E2DE6B8E9004F982D /* HealthAgentUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D485317F2DE6B8E9004F982D /* Build configuration list for PBXNativeTarget "FoodEyeUITests" */;
+			buildConfigurationList = D485317F2DE6B8E9004F982D /* Build configuration list for PBXNativeTarget "HealthAgentUITests" */;
 			buildPhases = (
 				D485316B2DE6B8E9004F982D /* Sources */,
 				D485316C2DE6B8E9004F982D /* Frameworks */,
@@ -156,11 +156,11 @@
 			fileSystemSynchronizedGroups = (
 				D48531722DE6B8E9004F982D /* FoodEyeUITests */,
 			);
-			name = FoodEyeUITests;
+			name = HealthAgentUITests;
 			packageProductDependencies = (
 			);
 			productName = FoodEyeUITests;
-			productReference = D485316F2DE6B8E9004F982D /* FoodEyeUITests.xctest */;
+			productReference = D485316F2DE6B8E9004F982D /* HealthAgentUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -186,7 +186,7 @@
 					};
 				};
 			};
-			buildConfigurationList = D48531532DE6B8E8004F982D /* Build configuration list for PBXProject "FoodEye" */;
+			buildConfigurationList = D48531532DE6B8E8004F982D /* Build configuration list for PBXProject "HealthAgent" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -200,9 +200,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D48531572DE6B8E8004F982D /* FoodEye */,
-				D48531642DE6B8E9004F982D /* FoodEyeTests */,
-				D485316E2DE6B8E9004F982D /* FoodEyeUITests */,
+				D48531572DE6B8E8004F982D /* HealthAgent */,
+				D48531642DE6B8E9004F982D /* HealthAgentTests */,
+				D485316E2DE6B8E9004F982D /* HealthAgentUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -258,12 +258,12 @@
 /* Begin PBXTargetDependency section */
 		D48531672DE6B8E9004F982D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D48531572DE6B8E8004F982D /* FoodEye */;
+			target = D48531572DE6B8E8004F982D /* HealthAgent */;
 			targetProxy = D48531662DE6B8E9004F982D /* PBXContainerItemProxy */;
 		};
 		D48531712DE6B8E9004F982D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D48531572DE6B8E8004F982D /* FoodEye */;
+			target = D48531572DE6B8E8004F982D /* HealthAgent */;
 			targetProxy = D48531702DE6B8E9004F982D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -400,7 +400,7 @@
 				DEVELOPMENT_TEAM = P77X63PVT6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "食物营养师";
+				INFOPLIST_KEY_CFBundleDisplayName = "Health Agent";
 				INFOPLIST_KEY_NSCameraUsageDescription = "FoodEye needs access to your camera to take photos of your food for nutritional analysis.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "FoodEye needs access to your photo library to select existing food photos for nutritional analysis.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -413,7 +413,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = philip.FoodEye;
+				PRODUCT_BUNDLE_IDENTIFIER = philip.healthAgent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -435,7 +435,7 @@
 				DEVELOPMENT_TEAM = P77X63PVT6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "食物营养师";
+				INFOPLIST_KEY_CFBundleDisplayName = "Health Agent";
 				INFOPLIST_KEY_NSCameraUsageDescription = "FoodEye needs access to your camera to take photos of your food for nutritional analysis.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "FoodEye needs access to your photo library to select existing food photos for nutritional analysis.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -448,7 +448,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = philip.FoodEye;
+				PRODUCT_BUNDLE_IDENTIFIER = philip.healthAgent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -475,7 +475,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FoodEye.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FoodEye";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HealthAgent.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HealthAgent";
 			};
 			name = Debug;
 		};
@@ -494,7 +494,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FoodEye.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FoodEye";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HealthAgent.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HealthAgent";
 			};
 			name = Release;
 		};
@@ -535,7 +535,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D48531532DE6B8E8004F982D /* Build configuration list for PBXProject "FoodEye" */ = {
+		D48531532DE6B8E8004F982D /* Build configuration list for PBXProject "HealthAgent" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D48531772DE6B8E9004F982D /* Debug */,
@@ -544,7 +544,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D48531792DE6B8E9004F982D /* Build configuration list for PBXNativeTarget "FoodEye" */ = {
+		D48531792DE6B8E9004F982D /* Build configuration list for PBXNativeTarget "HealthAgent" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D485317A2DE6B8E9004F982D /* Debug */,
@@ -553,7 +553,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D485317C2DE6B8E9004F982D /* Build configuration list for PBXNativeTarget "FoodEyeTests" */ = {
+		D485317C2DE6B8E9004F982D /* Build configuration list for PBXNativeTarget "HealthAgentTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D485317D2DE6B8E9004F982D /* Debug */,
@@ -562,7 +562,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D485317F2DE6B8E9004F982D /* Build configuration list for PBXNativeTarget "FoodEyeUITests" */ = {
+		D485317F2DE6B8E9004F982D /* Build configuration list for PBXNativeTarget "HealthAgentUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D48531802DE6B8E9004F982D /* Debug */,

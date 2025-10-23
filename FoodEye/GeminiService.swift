@@ -11,27 +11,30 @@ import UIKit
 class GeminiService: ObservableObject {
     private let baseURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent"
     
-    func analyzeFood(image: UIImage, mealInfo: MealInfo, apiKey: String, systemPrompt: String) async throws -> FoodAnalysisResult {
+    func analyzeFood(images: [UIImage], mealInfo: MealInfo, apiKey: String, systemPrompt: String) async throws -> FoodAnalysisResult {
         guard !apiKey.isEmpty else {
             throw GeminiError.missingAPIKey
         }
         
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-            throw GeminiError.imageProcessingFailed
-        }
+        // Get health profile for personalized analysis
+        let healthProfile = HealthProfileStorage.shared.healthProfile
         
-        let base64Image = imageData.base64EncodedString()
+        var imageParts: [GeminiPart] = []
+        for image in images {
+            guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+                throw GeminiError.imageProcessingFailed
+            }
+            let base64Image = imageData.base64EncodedString()
+            imageParts.append(GeminiPart(inlineData: GeminiInlineData(
+                mimeType: "image/jpeg",
+                data: base64Image
+            )))
+        }
         
         let requestBody = GeminiRequest(
             contents: [
                 GeminiContent(
-                    parts: [
-                        GeminiPart(text: createAnalysisPrompt(mealInfo: mealInfo, systemPrompt: systemPrompt)),
-                        GeminiPart(inlineData: GeminiInlineData(
-                            mimeType: "image/jpeg",
-                            data: base64Image
-                        ))
-                    ]
+                    parts: [GeminiPart(text: createAnalysisPrompt(mealInfo: mealInfo, healthProfile: healthProfile, systemPrompt: systemPrompt))] + imageParts
                 )
             ],
             generationConfig: GeminiGenerationConfig(
@@ -75,41 +78,57 @@ class GeminiService: ObservableObject {
         }
     }
     
-    private func createAnalysisPrompt(mealInfo: MealInfo, systemPrompt: String) -> String {
-        let nutritionFocusText = mealInfo.nutritionFocus.map { $0.rawValue }.joined(separator: "、")
-        let otherFocusText = mealInfo.otherNutritionFocus.isEmpty ? "" : "、\(mealInfo.otherNutritionFocus)"
+    private func createAnalysisPrompt(mealInfo: MealInfo, healthProfile: HealthProfile?, systemPrompt: String) -> String {
+        // Build health profile context if available
+        var healthContext = ""
+        if let profile = healthProfile {
+            healthContext = """
+            
+            ### Patient Health Profile:
+            \(profile.aiSummary.fullSummary)
+            
+            """
+            
+            if !profile.aiSummary.chronicConditions.isEmpty {
+                healthContext += "\n**Chronic Conditions:** \(profile.aiSummary.chronicConditions.map { $0.name }.joined(separator: ", "))"
+            }
+            
+            if !profile.aiSummary.medications.isEmpty {
+                healthContext += "\n**Current Medications:** \(profile.aiSummary.medications.map { $0.name }.joined(separator: ", "))"
+            }
+            
+            if !profile.aiSummary.allergies.isEmpty {
+                healthContext += "\n**Allergies:** \(profile.aiSummary.allergies.joined(separator: ", "))"
+            }
+            
+            if !profile.aiSummary.healthGoals.isEmpty {
+                healthContext += "\n**Health Goals:** \(profile.aiSummary.healthGoals.joined(separator: ", "))"
+            }
+        }
         
         let mealContext = """
+        \(healthContext)
         
-        ### 用餐信息：
-        **基本信息**
-        - 餐次类型：\(mealInfo.mealType.rawValue)
-        - 用餐地点：\(mealInfo.mealLocation.rawValue)
+        ### Meal Information:
+        **Basic Info**
+        - Meal Type: \(mealInfo.mealType.rawValue)
+        - Location: \(mealInfo.mealLocation.rawValue)
         
-        **份量与组成**
-        - 份量：\(mealInfo.portionSize.rawValue)
-        - 包含饮品：\(mealInfo.hasDrinks ? "是" : "否")\(mealInfo.hasDrinks && !mealInfo.drinkDetails.isEmpty ? "（\(mealInfo.drinkDetails)）" : "")
+        **Portion & Composition**
+        - Portion Size: \(mealInfo.portionSize.rawValue)
+        - Includes Beverages: \(mealInfo.hasDrinks ? "Yes" : "No")\(mealInfo.hasDrinks && !mealInfo.drinkDetails.isEmpty ? " (\(mealInfo.drinkDetails))" : "")
         
-        **烹饪方式**
-        - 主要方式：\(mealInfo.cookingMethod.rawValue)\(mealInfo.cookingMethod.rawValue == "其他" && !mealInfo.otherCookingMethod.isEmpty ? "（\(mealInfo.otherCookingMethod)）" : "")
+        **Cooking Method**
+        - Primary Method: \(mealInfo.cookingMethod.rawValue)\(mealInfo.cookingMethod.rawValue == "Other" && !mealInfo.otherCookingMethod.isEmpty ? " (\(mealInfo.otherCookingMethod))" : "")
         
-        **营养关注点**
-        - 关注方向：\(nutritionFocusText)\(otherFocusText)
+        ### Analysis Requirements:
+        Please analyze this meal based on the patient's health profile above and provide personalized nutrition analysis. Consider their chronic conditions, medications, allergies, and health goals when making recommendations.
         
-        **健康目标与限制**
-        - 健康目标：\(mealInfo.healthGoal.rawValue)\(mealInfo.healthGoal.rawValue == "其他" && !mealInfo.otherHealthGoal.isEmpty ? "（\(mealInfo.otherHealthGoal)）" : "")
-        - 食物过敏/禁忌：\(mealInfo.hasAllergies ? "有（\(mealInfo.allergyDetails)）" : "无")
-        - 饮食偏好：\(mealInfo.dietaryPreference.rawValue)\(mealInfo.dietaryPreference.rawValue == "其他" && !mealInfo.otherDietaryPreference.isEmpty ? "（\(mealInfo.otherDietaryPreference)）" : "")
-        
-        **饮食频率**
-        - 本周类似频率：\(mealInfo.weeklyFrequency.rawValue)
-        
-        ### 输出要求：
-        请按照以下JSON格式提供专业营养分析结果，根据用户关注点提供相应的详细数据：
+        Provide professional nutrition analysis results in the following JSON format:
         ```json
         {
-          "ingredients": ["识别的食材1", "识别的食材2", ...],
-          "dishes": ["菜品名称1", "菜品名称2", ...],
+          "ingredients": ["ingredient 1", "ingredient 2", ...],
+          "dishes": ["dish name 1", "dish name 2", ...],
           "nutrition": {
             "calories": 650,
             "protein": 35,
@@ -170,23 +189,26 @@ class GeminiService: ObservableObject {
             }
           },
           "healthScore": 85,
-          "analysis": "基于用户关注点的详细专业分析...",
-          "recommendations": ["建议1", "建议2", "建议3"],
-          "alternatives": ["替代方案1", "替代方案2"],
-          "warnings": ["注意事项1（如有）", "注意事项2（如有）"]
+          "analysis": "Detailed professional analysis based on patient's health profile and meal composition...",
+          "recommendations": ["Recommendation 1: Personalized to patient's condition", "Recommendation 2", "Recommendation 3"],
+          "alternatives": ["Healthier alternative 1", "Alternative 2"],
+          "warnings": ["Warning 1 (if applicable)", "Warning 2 (if applicable)"]
         }
         ```
         
-        ### 分析重点：
-        请特别关注用户选择的营养关注点，提供针对性的深度分析和建议。根据关注点计算相应的专业指标：
+        ### Analysis Focus:
+        Based on the patient's health profile (chronic conditions, medications, allergies, and health goals), provide targeted nutrition analysis:
         
-        - 抗氧化抗炎：重点分析ORAC值、花青素、类黄酮、β-胡萝卜素、维生素C/E含量
-        - 降糖控糖：重点分析GI值、总糖分、添加糖、膳食纤维、净碳水化合物
-        - 降脂护心：重点分析脂肪酸谱（饱和/不饱和比例）、胆固醇、Omega-3含量
-        - 增肌补蛋白：重点分析蛋白质质量、必需氨基酸、BCAA（支链氨基酸）含量
-        - 补微量元素：重点分析钙、铁、锌、镁、钾、维生素B族含量
-        - 增纤维：重点分析可溶性/不溶性纤维、益生元含量
-        - 能量管理：重点分析总热量、热密度、各宏量营养素热量分配
+        - For diabetes: Focus on GI value, total sugars, added sugars, net carbs, dietary fiber
+        - For cardiovascular issues: Focus on saturated fat, unsaturated fat, cholesterol, omega-3/6 ratio, sodium
+        - For hypertension: Focus on sodium, potassium, magnesium
+        - For general health: Analyze calories, macronutrient balance, micronutrients, and overall nutritional quality
+        
+        **Important**: 
+        1. Consider drug-food interactions based on medications listed
+        2. Flag any ingredients that conflict with patient's allergies
+        3. Align recommendations with patient's health goals
+        4. Ensure output is strict JSON format without additional explanatory text.
         """
         
         let professionalPrompt = """
@@ -216,8 +238,8 @@ class GeminiService: ObservableObject {
              3. **个性化建议**（3–5 条）
                 - 针对本次摄入的优点与不足，提出"增/减/替换"方案
                 - 建议搭配食材、调整烹饪方式、每日频率分配
-        4. **交互与校正**
-           - 若对某些识别结果或份量不确定，主动向用户提问补充；
+        4. **输出风格**
+           - 直接给出分析结果和建议，不要提出反问或不确定的表述。
            - 始终以"鼓励—正向—专业"风格回应，避免诊断性或过度医学化语句，必要时建议咨询营养师或医生。
         """
         
@@ -492,4 +514,592 @@ struct EnergyBreakdown: Codable {
     let carbCalories: Int
     let fatCalories: Int
     let caloriesPerGram: Double
+}
+
+// MARK: - Health Profile Analysis
+
+extension GeminiService {
+    func analyzeHealthProfile(text: String, image: UIImage?, apiKey: String) async throws -> HealthProfile.AISummary {
+        guard !apiKey.isEmpty else {
+            throw GeminiError.missingAPIKey
+        }
+        
+        var parts: [GeminiPart] = [GeminiPart(text: createHealthProfilePrompt(text: text))]
+        
+        if let image = image,
+           let imageData = image.jpegData(compressionQuality: 0.8) {
+            let base64Image = imageData.base64EncodedString()
+            parts.append(GeminiPart(inlineData: GeminiInlineData(
+                mimeType: "image/jpeg",
+                data: base64Image
+            )))
+        }
+        
+        let requestBody = GeminiRequest(
+            contents: [GeminiContent(parts: parts)],
+            generationConfig: GeminiGenerationConfig(
+                temperature: 0.7,
+                topK: 40,
+                topP: 0.95,
+                maxOutputTokens: 2048
+            )
+        )
+        
+        let response = try await makeRequest(requestBody: requestBody, apiKey: apiKey)
+        return try parseHealthProfile(from: response)
+    }
+    
+private func createHealthProfilePrompt(text: String) -> String {
+    return """
+    You are a medical AI assistant analyzing a patient's health profile based on the provided text or image.
+
+    User's Health Information:
+    \(text)
+
+    Your task is to generate a clear, comprehensive, and professional written summary of the user's health profile in plain English text (not JSON or bullet points).
+
+    The summary should:
+    - Be written as a cohesive paragraph (approximately 4–8 sentences)
+    - Describe the user’s demographic details (age, gender, height, weight, BMI if available)
+    - Include any chronic conditions, medications (with dosage or frequency if mentioned), allergies, and dietary restrictions
+    - Summarize relevant lifestyle information such as exercise habits, physical limitations, or health goals
+    - Incorporate vital signs or lab data if provided (e.g., blood pressure, heart rate, blood sugar, cholesterol)
+    - Maintain a neutral, clinical tone suitable for both human readers and other AI systems
+    - Be understandable to the user (the Teaching Assistant) while also structured for future AI analysis
+
+    Output only the final paragraph of analysis — do not include instructions, lists, or formatting.
+    """
+}
+    
+    private func parseHealthProfile(from response: GeminiResponse) throws -> HealthProfile.AISummary {
+        guard let candidate = response.candidates.first,
+              let text = candidate.content.parts.first?.text else {
+            throw GeminiError.decodingFailed
+        }
+        
+        // Try to extract and parse JSON
+        if let jsonData = extractJSON(from: text),
+           let data = jsonData.data(using: .utf8) {
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            
+            // Try to decode the summary
+            if let summary = try? decoder.decode(HealthProfile.AISummary.self, from: data) {
+                // Clean up the fullSummary to remove any JSON artifacts
+                var cleanedSummary = summary.fullSummary.trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                // If summary looks like JSON or is too short, create a better one
+                if cleanedSummary.isEmpty || cleanedSummary.first == "{" || cleanedSummary.first == "[" || cleanedSummary.count < 50 {
+                    cleanedSummary = generateFallbackSummary(from: summary)
+                }
+                
+                return HealthProfile.AISummary(
+                    personalInfo: summary.personalInfo,
+                    chronicConditions: summary.chronicConditions,
+                    medications: summary.medications,
+                    allergies: summary.allergies,
+                    dietaryRestrictions: summary.dietaryRestrictions,
+                    exerciseLimitations: summary.exerciseLimitations,
+                    healthGoals: summary.healthGoals,
+                    vitalSigns: summary.vitalSigns,
+                    fullSummary: cleanedSummary
+                )
+            }
+        }
+        
+        // Fallback: create a summary with the text as fullSummary
+        // Try to extract basic info from text
+        let personalInfo = extractPersonalInfo(from: text)
+        let conditions = extractConditions(from: text)
+        let medications = extractMedications(from: text)
+        let allergies = extractAllergies(from: text)
+        
+        // Clean the text to use as summary
+        var cleanSummary = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // If it looks like the AI returned structured data, extract just the narrative parts
+        if cleanSummary.contains("```") {
+            // Remove code blocks
+            cleanSummary = cleanSummary.components(separatedBy: "```")
+                .enumerated()
+                .filter { $0.offset % 2 == 0 }
+                .map { $0.element }
+                .joined(separator: " ")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        
+        return HealthProfile.AISummary(
+            personalInfo: personalInfo,
+            chronicConditions: conditions,
+            medications: medications,
+            allergies: allergies,
+            dietaryRestrictions: [],
+            exerciseLimitations: [],
+            healthGoals: [],
+            vitalSigns: nil,
+            fullSummary: cleanSummary
+        )
+    }
+    
+    private func generateFallbackSummary(from summary: HealthProfile.AISummary) -> String {
+        var parts: [String] = []
+        
+        // Demographics
+        var demographics: [String] = []
+        if let age = summary.personalInfo.age {
+            demographics.append("\(age) years old")
+        }
+        if let gender = summary.personalInfo.gender {
+            demographics.append(gender.lowercased())
+        }
+        
+        if !demographics.isEmpty {
+            parts.append("This patient is " + demographics.joined(separator: ", "))
+        }
+        
+        // Conditions
+        if !summary.chronicConditions.isEmpty {
+            let conditionNames = summary.chronicConditions.map { condition in
+                if let severity = condition.severity, !severity.isEmpty {
+                    return "\(severity.lowercased()) \(condition.name.lowercased())"
+                }
+                return condition.name
+            }.joined(separator: ", ")
+            parts.append("currently managing " + conditionNames)
+        }
+        
+        // Medications
+        if !summary.medications.isEmpty {
+            let medList = summary.medications.map { med in
+                var medDesc = med.name
+                if let dosage = med.dosage {
+                    medDesc += " (\(dosage))"
+                }
+                return medDesc
+            }.joined(separator: ", ")
+            parts.append("taking " + medList)
+        }
+        
+        // Allergies
+        if !summary.allergies.isEmpty {
+            parts.append("with allergies to " + summary.allergies.joined(separator: ", "))
+        }
+        
+        // Health goals
+        if !summary.healthGoals.isEmpty {
+            parts.append("Their health goals include " + summary.healthGoals.joined(separator: ", ").lowercased())
+        }
+        
+        if parts.isEmpty {
+            return "Health profile information is being processed. Please provide more details for a comprehensive summary."
+        }
+        
+        // Join all parts into a flowing paragraph
+        let sentence = parts.joined(separator: ", ") + "."
+        return sentence.prefix(1).uppercased() + sentence.dropFirst()
+    }
+    
+    private func extractPersonalInfo(from text: String) -> HealthProfile.PersonalInfo {
+        var age: Int? = nil
+        var gender: String? = nil
+        var weight: Double? = nil
+        var height: Double? = nil
+        
+        // Try to extract age
+        let agePattern = #"(\d+)\s*(?:years old|yrs|years|year old|岁)"#
+        if let ageMatch = text.range(of: agePattern, options: .regularExpression),
+           let ageValue = Int(text[ageMatch].components(separatedBy: CharacterSet.decimalDigits.inverted).joined()) {
+            age = ageValue
+        }
+        
+        // Try to extract gender
+        if text.lowercased().contains("male") && !text.lowercased().contains("female") {
+            gender = "Male"
+        } else if text.lowercased().contains("female") {
+            gender = "Female"
+        }
+        
+        // Try to extract weight
+        let weightPattern = #"(\d+\.?\d*)\s*(?:kg|kilograms)"#
+        if let weightMatch = text.range(of: weightPattern, options: .regularExpression),
+           let weightValue = Double(text[weightMatch].components(separatedBy: CharacterSet.decimalDigits.union(CharacterSet(charactersIn: ".")).inverted).joined()) {
+            weight = weightValue
+        }
+        
+        // Try to extract height  
+        let heightPattern = #"(\d+\.?\d*)\s*(?:cm|centimeters)"#
+        if let heightMatch = text.range(of: heightPattern, options: .regularExpression),
+           let heightValue = Double(text[heightMatch].components(separatedBy: CharacterSet.decimalDigits.union(CharacterSet(charactersIn: ".")).inverted).joined()) {
+            height = heightValue
+        }
+        
+        // Calculate BMI if we have weight and height
+        var bmi: Double? = nil
+        if let w = weight, let h = height, h > 0 {
+            bmi = w / ((h / 100) * (h / 100))
+        }
+        
+        return HealthProfile.PersonalInfo(age: age, gender: gender, weight: weight, height: height, bmi: bmi)
+    }
+    
+    private func extractConditions(from text: String) -> [HealthProfile.ChronicCondition] {
+        var conditions: [HealthProfile.ChronicCondition] = []
+        
+        // Common conditions to look for
+        let conditionKeywords = ["diabetes", "hypertension", "high blood pressure", "arthritis", "asthma", "heart disease"]
+        
+        for keyword in conditionKeywords {
+            if text.lowercased().contains(keyword) {
+                conditions.append(HealthProfile.ChronicCondition(
+                    name: keyword.capitalized,
+                    severity: nil,
+                    diagnosedDate: nil,
+                    notes: nil
+                ))
+            }
+        }
+        
+        return conditions
+    }
+    
+    private func extractMedications(from text: String) -> [HealthProfile.Medication] {
+        var medications: [HealthProfile.Medication] = []
+        
+        // Common medication patterns
+        let medPattern = #"(?:taking|on|prescribed)\s+([A-Z][a-z]+(?:in)?)\s*(?:(\d+\s*mg))?(?:\s+(\w+\s+\w+))?"#
+        
+        if let regex = try? NSRegularExpression(pattern: medPattern, options: .caseInsensitive) {
+            let nsText = text as NSString
+            let matches = regex.matches(in: text, range: NSRange(location: 0, length: nsText.length))
+            
+            for match in matches {
+                if match.numberOfRanges >= 2 {
+                    let name = nsText.substring(with: match.range(at: 1))
+                    var dosage: String? = nil
+                    var frequency: String? = nil
+                    
+                    if match.numberOfRanges >= 3 && match.range(at: 2).location != NSNotFound {
+                        dosage = nsText.substring(with: match.range(at: 2))
+                    }
+                    
+                    if match.numberOfRanges >= 4 && match.range(at: 3).location != NSNotFound {
+                        frequency = nsText.substring(with: match.range(at: 3))
+                    }
+                    
+                    medications.append(HealthProfile.Medication(
+                        name: name,
+                        dosage: dosage,
+                        frequency: frequency,
+                        purpose: nil,
+                        sideEffects: nil
+                    ))
+                }
+            }
+        }
+        
+        return medications
+    }
+    
+    private func extractAllergies(from text: String) -> [String] {
+        var allergies: [String] = []
+        
+        // Look for allergy mentions
+        if let allergyRange = text.range(of: #"allerg(?:y|ies|ic)\s+to\s+([^.,]+)"#, options: .regularExpression) {
+            let allergyText = String(text[allergyRange])
+            let items = allergyText.components(separatedBy: "to").last?.trimmingCharacters(in: .whitespaces) ?? ""
+            allergies = items.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+        }
+        
+        return allergies
+    }
+    
+    func generateExercisePlan(healthProfile: HealthProfile, apiKey: String) async throws -> ExercisePlan {
+        guard !apiKey.isEmpty else {
+            throw GeminiError.missingAPIKey
+        }
+        
+        let prompt = createExercisePlanPrompt(healthProfile: healthProfile)
+        let requestBody = GeminiRequest(
+            contents: [GeminiContent(parts: [GeminiPart(text: prompt)])],
+            generationConfig: GeminiGenerationConfig(
+                temperature: 0.8,
+                topK: 40,
+                topP: 0.95,
+                maxOutputTokens: 2048
+            )
+        )
+        
+        let response = try await makeRequest(requestBody: requestBody, apiKey: apiKey)
+        return try parseExercisePlan(from: response)
+    }
+    
+    private func createExercisePlanPrompt(healthProfile: HealthProfile) -> String {
+        let conditions = healthProfile.aiSummary.chronicConditions.map { $0.name }.joined(separator: ", ")
+        let limitations = healthProfile.aiSummary.exerciseLimitations.joined(separator: ", ")
+        let age = healthProfile.aiSummary.personalInfo.age ?? 0
+        
+        return """
+        You are an AI physiotherapist creating a personalized exercise plan for a chronic disease patient.
+        
+        Patient Profile:
+        - Age: \(age)
+        - Chronic Conditions: \(conditions.isEmpty ? "None" : conditions)
+        - Exercise Limitations: \(limitations.isEmpty ? "None" : limitations)
+        - Health Goals: \(healthProfile.aiSummary.healthGoals.joined(separator: ", "))
+        
+        Full Summary: \(healthProfile.aiSummary.fullSummary)
+        
+        Create a safe, achievable weekly exercise plan in JSON format:
+        ```json
+        {
+          "overview": "A personalized exercise plan designed for your specific health needs...",
+          "weeklySchedule": [
+            {
+              "day": "Monday",
+              "activities": [
+                {
+                  "name": "Brisk Walking",
+                  "duration": 20,
+                  "intensity": "Moderate",
+                  "instructions": "Walk at a comfortable pace, maintain good posture..."
+                }
+              ]
+            }
+          ],
+          "safetyNotes": [
+            "Monitor your blood sugar before and after exercise",
+            "Stop if you experience chest pain or severe shortness of breath",
+            "Stay hydrated throughout the day"
+          ]
+        }
+        ```
+        
+        Guidelines:
+        - Design exercises suitable for chronic disease patients
+        - Start with low-impact, achievable goals
+        - Consider any mobility limitations
+        - Provide 5-7 days of planned activities
+        - Include rest days
+        - Focus on safety and gradual progression
+        - Activities should be 10-30 minutes each
+        """
+    }
+    
+    private func parseExercisePlan(from response: GeminiResponse) throws -> ExercisePlan {
+        guard let candidate = response.candidates.first,
+              let text = candidate.content.parts.first?.text else {
+            throw GeminiError.decodingFailed
+        }
+        
+        if let jsonData = extractJSON(from: text),
+           let data = jsonData.data(using: .utf8),
+           let plan = try? JSONDecoder().decode(ExercisePlan.self, from: data) {
+            return plan
+        }
+        
+        // Fallback plan
+        return ExercisePlan(
+            overview: "A basic exercise plan to get you started. Please consult with your healthcare provider.",
+            weeklySchedule: [
+                DaySchedule(day: "Monday", activities: [
+                    PlannedActivity(name: "Light Walking", duration: 10, intensity: "Light", instructions: "Walk at a comfortable pace")
+                ])
+            ],
+            safetyNotes: ["Consult your doctor before starting any exercise program", "Stop if you experience pain or discomfort"]
+        )
+    }
+    
+    func checkDrugInteractions(medications: [HealthProfile.Medication], apiKey: String) async throws -> String {
+        guard !apiKey.isEmpty else {
+            throw GeminiError.missingAPIKey
+        }
+        
+        let prompt = createDrugInteractionPrompt(medications: medications)
+        let requestBody = GeminiRequest(
+            contents: [GeminiContent(parts: [GeminiPart(text: prompt)])],
+            generationConfig: GeminiGenerationConfig(
+                temperature: 0.7,
+                topK: 40,
+                topP: 0.95,
+                maxOutputTokens: 2048
+            )
+        )
+        
+        let response = try await makeRequest(requestBody: requestBody, apiKey: apiKey)
+        
+        guard let candidate = response.candidates.first,
+              let text = candidate.content.parts.first?.text else {
+            throw GeminiError.decodingFailed
+        }
+        
+        return text
+    }
+    
+    private func createDrugInteractionPrompt(medications: [HealthProfile.Medication]) -> String {
+        let medicationList = medications.map { med in
+            "\(med.name) - \(med.dosage ?? "unknown dosage") - \(med.frequency ?? "unknown frequency")"
+        }.joined(separator: "\n")
+        
+        return """
+        You are an AI pharmacist analyzing potential drug interactions.
+        
+        Current Medications:
+        \(medicationList)
+        
+        Please analyze and provide:
+        
+        1. **Drug-Drug Interactions**: Check if any of these medications interact with each other
+        2. **Severity Level**: Rate each interaction as Minor, Moderate, or Severe
+        3. **Recommendations**: What the patient should do about each interaction
+        4. **Food Interactions**: Common foods to avoid with these medications
+        5. **Timing Advice**: Best times to take each medication
+        
+        Format your response in clear sections with bullet points.
+        Focus on practical, actionable advice for chronic disease patients.
+        Include warnings about serious interactions that require immediate doctor consultation.
+        """
+    }
+    
+    private func makeRequest(requestBody: GeminiRequest, apiKey: String) async throws -> GeminiResponse {
+        var request = URLRequest(url: URL(string: "\(baseURL)?key=\(apiKey)")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        do {
+            request.httpBody = try JSONEncoder().encode(requestBody)
+        } catch {
+            throw GeminiError.encodingFailed
+        }
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw GeminiError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            if let errorData = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let error = errorData["error"] as? [String: Any],
+               let message = error["message"] as? String {
+                throw GeminiError.apiError(message)
+            }
+            throw GeminiError.httpError(httpResponse.statusCode)
+        }
+        
+        do {
+            return try JSONDecoder().decode(GeminiResponse.self, from: data)
+        } catch {
+            throw GeminiError.decodingFailed
+        }
+    }
+    
+    // MARK: - Medication Helper Functions
+    
+    func askHealthQuestion(question: String, healthProfile: HealthProfile?, apiKey: String) async throws -> String {
+        guard !apiKey.isEmpty else {
+            throw GeminiError.missingAPIKey
+        }
+        
+        var context = ""
+        if let profile = healthProfile {
+            context = """
+            Patient Health Profile:
+            \(profile.aiSummary.fullSummary)
+            """
+        }
+        
+        let prompt = """
+        You are a helpful medical AI assistant. Answer the following health-related question.
+        
+        \(context.isEmpty ? "" : context + "\n\n")
+        Question: \(question)
+        
+        Instructions:
+        - Provide helpful, accurate medical information
+        - If the question is about finding clinics or hospitals, suggest general types of facilities and remind the user to check online directories or consult their local health authority
+        - Always remind users to consult healthcare professionals for medical decisions
+        - Be empathetic and supportive
+        - Keep responses clear and concise
+        - Use simple language
+        
+        IMPORTANT: Always include a disclaimer that this is for reference only and users should consult healthcare professionals.
+        """
+        
+        let requestBody = GeminiRequest(
+            contents: [
+                GeminiContent(
+                    parts: [GeminiPart(text: prompt)]
+                )
+            ],
+            generationConfig: GeminiGenerationConfig(
+                temperature: 0.7,
+                topK: 40,
+                topP: 0.95,
+                maxOutputTokens: 1024
+            )
+        )
+        
+        let response = try await makeRequest(requestBody: requestBody, apiKey: apiKey)
+        
+        guard let candidate = response.candidates.first,
+              let text = candidate.content.parts.first?.text else {
+            throw GeminiError.decodingFailed
+        }
+        
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
+    func generateComfortMessage(healthProfile: HealthProfile?, apiKey: String) async throws -> String {
+        guard !apiKey.isEmpty else {
+            throw GeminiError.missingAPIKey
+        }
+        
+        var context = ""
+        if let profile = healthProfile {
+            context = """
+            Patient Health Profile:
+            \(profile.aiSummary.fullSummary)
+            """
+        }
+        
+        let prompt = """
+        You are a compassionate healthcare companion. Write a warm, comforting message for a patient managing their health.
+        
+        \(context.isEmpty ? "" : context + "\n\n")
+        
+        Instructions:
+        - Write 3-5 sentences that are encouraging and supportive
+        - Acknowledge their efforts in managing their health
+        - Provide hope and positive reinforcement
+        - Be empathetic and kind
+        - Use warm, friendly tone
+        - Focus on their strength and resilience
+        - If they have chronic conditions, acknowledge the challenges but emphasize their capability
+        
+        Write the comforting message directly without any preamble.
+        """
+        
+        let requestBody = GeminiRequest(
+            contents: [
+                GeminiContent(
+                    parts: [GeminiPart(text: prompt)]
+                )
+            ],
+            generationConfig: GeminiGenerationConfig(
+                temperature: 0.9,
+                topK: 40,
+                topP: 0.95,
+                maxOutputTokens: 512
+            )
+        )
+        
+        let response = try await makeRequest(requestBody: requestBody, apiKey: apiKey)
+        
+        guard let candidate = response.candidates.first,
+              let text = candidate.content.parts.first?.text else {
+            throw GeminiError.decodingFailed
+        }
+        
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 } 

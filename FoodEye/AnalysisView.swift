@@ -8,12 +8,12 @@
 import SwiftUI
 
 struct AnalysisView: View {
-    let selectedImage: UIImage
+    let selectedImages: [UIImage]
     let mealInfo: MealInfo
     
     @StateObject private var geminiService = GeminiService()
-    @AppStorage("geminiApiKey") private var apiKey: String = ""
-    @AppStorage("systemPrompt") private var systemPrompt: String = ""
+    @AppStorage("geminiApiKey") private var apiKey: String = AppConfig.geminiAPIKey
+    @AppStorage("systemPrompt") private var systemPrompt: String = AppConfig.defaultSystemPrompt
     
     @State private var isAnalyzing = false
     @State private var analysisResult: FoodAnalysisResult?
@@ -28,17 +28,17 @@ struct AnalysisView: View {
             VStack(spacing: 30) {
                 // Header
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("食物分析")
+                    Text("Food Analysis")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
-                    Text("AI驱动的营养分析")
+                    Text("AI-Powered Nutrition Analysis")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 24)
-                .padding(.top, 20)
+                .padding(.top, 60)
                 
                 Spacer()
                 
@@ -64,12 +64,12 @@ struct AnalysisView: View {
                         }
                         
                         VStack(spacing: 8) {
-                            Text("正在分析您的食物")
+                            Text("Analyzing Your Food")
                                 .font(.title2)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
                             
-                            Text("AI正在检查食材和营养成分...")
+                            Text("AI is checking ingredients and nutrients...")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                                 .multilineTextAlignment(.center)
@@ -80,7 +80,7 @@ struct AnalysisView: View {
                             HStack {
                                 Image(systemName: analysisProgress > 0.2 ? "checkmark.circle.fill" : "circle")
                                     .foregroundColor(analysisProgress > 0.2 ? .white : .gray)
-                                Text("处理图像")
+                                Text("Processing Image")
                                     .foregroundColor(.gray)
                                 Spacer()
                             }
@@ -88,7 +88,7 @@ struct AnalysisView: View {
                             HStack {
                                 Image(systemName: analysisProgress > 0.5 ? "checkmark.circle.fill" : "circle")
                                     .foregroundColor(analysisProgress > 0.5 ? .white : .gray)
-                                Text("识别食材")
+                                Text("Identifying Ingredients")
                                     .foregroundColor(.gray)
                                 Spacer()
                             }
@@ -96,7 +96,7 @@ struct AnalysisView: View {
                             HStack {
                                 Image(systemName: analysisProgress > 0.8 ? "checkmark.circle.fill" : "circle")
                                     .foregroundColor(analysisProgress > 0.8 ? .white : .gray)
-                                Text("计算营养")
+                                Text("Calculating Nutrition")
                                     .foregroundColor(.gray)
                                 Spacer()
                             }
@@ -107,7 +107,7 @@ struct AnalysisView: View {
                 } else if let result = analysisResult {
                     // Success State - Navigate to Results
                     NavigationLink(
-                        destination: ResultsView(analysisResult: result, selectedImage: selectedImage),
+                        destination: ResultsView(analysisResult: result, selectedImage: selectedImages.first!),
                         isActive: .constant(true)
                     ) {
                         EmptyView()
@@ -119,18 +119,18 @@ struct AnalysisView: View {
                             .font(.system(size: 60))
                             .foregroundColor(.gray)
                         
-                        Text("准备分析")
+                        Text("Ready to Analyze")
                             .font(.title2)
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
                         
-                        Text("本应用中的 AI 营养分析结果仅作为参考性建议，不构成医疗诊断或治疗依据。如您有特殊健康状况或疑问，请务必咨询专业注册营养师，以获取个性化、权威的医疗和营养指导。")
+                        Text("AI nutrition analysis results are for reference only and do not constitute medical diagnosis or treatment. For specific health conditions, please consult a professional registered dietitian.")
                             .font(.caption)
                             .foregroundColor(.yellow)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 40)
 
-                        Text("点击\"开始分析\"开始")
+                        Text("Click \"Start Analysis\" to begin")
                             .font(.subheadline)
                             .foregroundColor(.gray)
                     }
@@ -146,7 +146,7 @@ struct AnalysisView: View {
                         HStack {
                             Image(systemName: "play.circle.fill")
                                 .font(.title2)
-                            Text("开始分析")
+                            Text("Start Analysis")
                                 .font(.headline)
                                 .fontWeight(.semibold)
                         }
@@ -162,20 +162,22 @@ struct AnalysisView: View {
                 }
             }
         }
+        .navigationBarHidden(true)
+        .navigationBarBackButtonHidden(true)
         .preferredColorScheme(.dark)
-        .alert("分析错误", isPresented: $showingError) {
-            Button("重试") {
+        .alert("Analysis Error", isPresented: $showingError) {
+            Button("Retry") {
                 startAnalysis()
             }
-            Button("取消", role: .cancel) { }
+            Button("Cancel", role: .cancel) { }
         } message: {
-            Text(errorMessage ?? "发生未知错误")
+            Text(errorMessage ?? "An unknown error occurred")
         }
     }
     
     private func startAnalysis() {
         guard !apiKey.isEmpty else {
-            errorMessage = "请先在设置中配置您的API密钥。"
+            errorMessage = "Please configure your API key in Settings first."
             showingError = true
             return
         }
@@ -195,7 +197,7 @@ struct AnalysisView: View {
         Task {
             do {
                 let result = try await geminiService.analyzeFood(
-                    image: selectedImage,
+                    images: selectedImages,
                     mealInfo: mealInfo,
                     apiKey: apiKey,
                     systemPrompt: systemPrompt
@@ -223,7 +225,7 @@ struct AnalysisView: View {
 struct AnalysisView_Previews: PreviewProvider {
     static var previews: some View {
         AnalysisView(
-            selectedImage: UIImage(systemName: "photo")!,
+            selectedImages: [UIImage(systemName: "photo")!],
             mealInfo: MealInfo(
                 mealType: .lunch,
                 mealLocation: .home,
