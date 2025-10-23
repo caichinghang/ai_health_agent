@@ -63,7 +63,7 @@
       static let geminiAPIKey = "YOUR_API_KEY_HERE"
       ```
    3. Replace `YOUR_API_KEY_HERE` with your actual Gemini API key:
-      ```swift
+```swift
       static let geminiAPIKey = "AIzaSy...your-actual-key-here"
       ```
    4. Save the file (⌘ + S)
@@ -183,6 +183,9 @@ HealthAgent/
 ## ⚠️ Important Notes
 
 1. **API Key Security**: Never share your API key publicly or commit it to version control
+   - If you accidentally commit your API key, **immediately revoke it** at [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - This repository's git history has been cleaned to remove previously exposed API keys
+   - Always keep your API key only in your local `AppConfig.swift` file
 2. **Internet Required**: The app requires internet connection for AI features
 3. **Privacy**: All health data is stored locally on your device
 4. **Medical Disclaimer**: This app is for informational purposes only and should not replace professional medical advice

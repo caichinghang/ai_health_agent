@@ -834,6 +834,9 @@ private func createHealthProfilePrompt(text: String) -> String {
     }
     
     private func createExercisePlanPrompt(healthProfile: HealthProfile) -> String {
+        // Include the full AI summary for comprehensive context
+        let fullSummary = healthProfile.aiSummary.fullSummary
+        
         let conditions = healthProfile.aiSummary.chronicConditions.map { $0.name }.joined(separator: ", ")
         let limitations = healthProfile.aiSummary.exerciseLimitations.joined(separator: ", ")
         let age = healthProfile.aiSummary.personalInfo.age ?? 0
@@ -841,13 +844,14 @@ private func createHealthProfilePrompt(text: String) -> String {
         return """
         You are an AI physiotherapist creating a personalized exercise plan for a chronic disease patient.
         
-        Patient Profile:
+        Patient Health Profile Summary:
+        \(fullSummary)
+        
+        Additional Details:
         - Age: \(age)
         - Chronic Conditions: \(conditions.isEmpty ? "None" : conditions)
         - Exercise Limitations: \(limitations.isEmpty ? "None" : limitations)
         - Health Goals: \(healthProfile.aiSummary.healthGoals.joined(separator: ", "))
-        
-        Full Summary: \(healthProfile.aiSummary.fullSummary)
         
         Create a safe, achievable weekly exercise plan in JSON format:
         ```json
