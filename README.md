@@ -51,7 +51,7 @@
 
 #### 2. **Clone/Open the Project**
    1. Open the project folder
-   2. Double-click `FoodEye.xcodeproj` to open in Xcode
+   2. Double-click `HealthAgent.xcodeproj` to open in Xcode
 
 #### 3. **Configure Your API Key**
    
@@ -150,7 +150,6 @@
 - Verify your API key is valid
 - Make sure you've created a health profile
 
-
 ---
 
 ## 🏗️ Technology Stack
@@ -166,16 +165,16 @@
 
 ```
 HealthAgent/
-├── FoodEye/                    # Main app folder
-│   ├── AppConfig.swift         # ⚠️ Add your API key here
-│   ├── GeminiService.swift     # AI integration
-│   ├── HomeView.swift          # Main dashboard
-│   ├── ContentView.swift       # Diet Assistant entry
-│   ├── ExerciseCoachView.swift # Exercise Coach
+├── FoodEye/                       # Main app folder
+│   ├── AppConfig.swift            # ⚠️ Add your API key here
+│   ├── GeminiService.swift        # AI integration
+│   ├── HomeView.swift             # Main dashboard
+│   ├── ContentView.swift          # Diet Assistant entry
+│   ├── ExerciseCoachView.swift    # Exercise Coach
 │   ├── MedicationHelperView.swift # Medication Helper
-│   ├── HealthProfile.swift     # Data models
+│   ├── HealthProfile.swift        # Data models
 │   └── ...
-└── FoodEye.xcodeproj           # Xcode project file
+└── HealthAgent.xcodeproj          # Xcode project file
 ```
 
 ---
@@ -195,7 +194,4 @@ HealthAgent/
 ## 📄 License
 
 This project is developed for educational and demonstration purposes.
-
-
-
 
